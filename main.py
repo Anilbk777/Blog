@@ -184,7 +184,7 @@ async def update_post_full(
     response_model=PostResponse,
 )
 async def update_post_partial(
-    post_id: int, post_data: PostUpdate, db: Annotated[Session, Depends(get_db)]
+    post_id: int, post_data: PostUpdate, db: Annotated[AsyncSession, Depends(get_db)]
 ):
     result = await db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
@@ -203,15 +203,15 @@ async def update_post_partial(
 
 
 @app.delete("/api/post/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-def get_delete_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
-    result = db.execute(select(Post).where(Post.id == post_id))
+async def get_delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result =await db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
         )
-    db.delete(post)
-    db.commit()
+    await db.delete(post)
+    await db.commit()
 
 
 def update_user(
