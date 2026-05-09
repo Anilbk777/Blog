@@ -52,8 +52,8 @@ async def get_posts(db: Annotated[AsyncSession, Depends(get_db)]):
 
 
 @app.get("/api/post/{post_id}", response_model=PostResponse)
-def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
-    result = db.execute(select(Post).where(Post.id == post_id))
+async def get_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(select(Post).where(Post.id == post_id).options(selectinload(Post.author)))
     post = result.scalars().first()
     if not post:
         raise HTTPException(
@@ -67,7 +67,7 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
+def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
     result = db.execute(select(User).where(User.id == post.user_id))
     user = result.scalars().first()
     if not user:
@@ -87,7 +87,7 @@ def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
 
 
 @app.post("/api/user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreate, db: Annotated[Session, Depends(get_db)]):
+def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
     result = db.execute(select(User).where(User.username == user.username))
     existing_user = result.scalars().first()
     if existing_user:
@@ -113,7 +113,7 @@ def create_user(user: UserCreate, db: Annotated[Session, Depends(get_db)]):
 
 
 @app.get("/api/users/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
+def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     result = db.execute(
         select(User).where(User.id == user_id),
     )
@@ -124,7 +124,7 @@ def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
 
 
 @app.get("/api/user/{user_id}/posts", response_model=list[PostResponse])
-def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
+def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     result = db.execute(
         select(User).where(User.id == user_id),
     )
@@ -143,7 +143,7 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     response_model=PostResponse,
 )
 def update_post_full(
-    post_id: int, post_data: PostCreate, db: Annotated[Session, Depends(get_db)]
+    post_id: int, post_data: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]
 ):
     result = db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
