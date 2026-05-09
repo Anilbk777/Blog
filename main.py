@@ -116,7 +116,7 @@ async def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_
 
 @app.get("/api/users/{user_id}", response_model=UserResponse)
 async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result =await db.execute(
+    result = await db.execute(
         select(User).where(User.id == user_id),
     )
     user = result.scalars().first()
@@ -126,18 +126,29 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
 
 
 @app.get("/api/user/{user_id}/posts", response_model=list[PostResponse])
-def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = db.execute(
-        select(User).where(User.id == user_id),
+async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(
+        select(Post)
+        .where(Post.user_id == user_id)
+        .options(selectinload(Post.author))  # Eager load author
+        .order_by(Post.date_posted.desc())  # Newest posts first
     )
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    posts = db.execute(select(Post).where(Post.user_id == user_id))
-    user_posts = posts.scalars().all()
-    return user_posts
+
+    posts = result.scalars().all()
+
+    # Optional: Check if user exists (only if you want 404)
+    if not posts:
+        # Check if user actually exists
+        user_result = await db.execute(select(User).where(User.id == user_id))
+        user = user_result.scalars().first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+        # If user exists but has no posts → return empty list (better UX)
+
+    return posts
 
 
 @app.put(
