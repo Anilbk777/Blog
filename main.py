@@ -53,7 +53,9 @@ async def get_posts(db: Annotated[AsyncSession, Depends(get_db)]):
 
 @app.get("/api/post/{post_id}", response_model=PostResponse)
 async def get_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(Post).where(Post.id == post_id).options(selectinload(Post.author)))
+    result = await db.execute(
+        select(Post).where(Post.id == post_id).options(selectinload(Post.author))
+    )
     post = result.scalars().first()
     if not post:
         raise HTTPException(
@@ -67,8 +69,8 @@ async def get_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = db.execute(select(User).where(User.id == post.user_id))
+async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(select(User).where(User.id == post.user_id))
     user = result.scalars().first()
     if not user:
         raise HTTPException(
@@ -81,8 +83,8 @@ def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
         content=post.content,
     )
     db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
+    await db.commit()
+    await db.refresh(new_post)
     return new_post
 
 
