@@ -269,8 +269,8 @@ async def update_user(
 
 
 @app.delete("/api/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
-    result = db.execute(select(User).where(User.id == user_id))
+async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
     if not user:
         raise HTTPException(
@@ -278,5 +278,5 @@ def delete_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
             detail="User not found",
         )
 
-    db.delete(user)
-    db.commit()
+    await db.delete(user)
+    await db.commit()
