@@ -84,20 +84,20 @@ async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_
     )
     db.add(new_post)
     await db.commit()
-    await db.refresh(new_post)
+    await db.refresh(new_post, attribute_names=["author"])
     return new_post
 
 
 @app.post("/api/user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = db.execute(select(User).where(User.username == user.username))
+async def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(select(User).where(User.username == user.username))
     existing_user = result.scalars().first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
-    result = db.execute(
+    result = await db.execute(
         select(User).where(User.email == user.email),
     )
     existing_email = result.scalars().first()
@@ -109,8 +109,8 @@ def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
 
     new_user = User(username=user.username, email=user.email)
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await db.commit()
+    await db.refresh(new_user)
     return new_user
 
 
