@@ -183,10 +183,10 @@ async def update_post_full(
     "/api/post/{post_id}",
     response_model=PostResponse,
 )
-def update_post_partial(
+async def update_post_partial(
     post_id: int, post_data: PostUpdate, db: Annotated[Session, Depends(get_db)]
 ):
-    result = db.execute(select(Post).where(Post.id == post_id))
+    result = await db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
     if not post:
         raise HTTPException(
@@ -197,8 +197,8 @@ def update_post_partial(
     for key, value in update_data.items():
         setattr(post, key, value)
 
-    db.commit()
-    db.refresh(post)
+    await db.commit()
+    await db.refresh(post, attribute_names=["author"])
     return post
 
 
