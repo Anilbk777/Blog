@@ -203,8 +203,8 @@ async def update_post_partial(
 
 
 @app.delete("/api/post/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def get_delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result =await db.execute(select(Post).where(Post.id == post_id))
+async def delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result = await db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
     if not post:
         raise HTTPException(
@@ -214,13 +214,14 @@ async def get_delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_
     await db.commit()
 
 
-def update_user(
+@app.patch("/api/user/{user_id}", response_model=UserResponse)
+async def update_user(
     user_id: int,
     user_update: UserUpdate,
-    db: Annotated[Session, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     # Fetch the user
-    result = db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
 
     if not user:
@@ -233,11 +234,10 @@ def update_user(
 
     # Check uniqueness for username (if being updated)
     if "username" in update_data and update_data["username"] != user.username:
-        existing = (
-            db.execute(select(User).where(User.username == update_data["username"]))
-            .scalars()
-            .first()
+        stmt = await db.execute(
+            select(User).where(User.username == update_data["username"])
         )
+        existing = stmt.scalars().first()
 
         if existing:
             raise HTTPException(
@@ -247,11 +247,10 @@ def update_user(
 
     # Check uniqueness for email (if being updated)
     if "email" in update_data and update_data["email"] != user.email:
-        existing = (
-            db.execute(select(User).where(User.email == update_data["email"]))
-            .scalars()
-            .first()
+        stmt = await db.execute(
+            select(User).where(User.username == update_data["username"])
         )
+        existing = stmt.scalars().first()
 
         if existing:
             raise HTTPException(
@@ -263,8 +262,8 @@ def update_user(
     for key, value in update_data.items():
         setattr(user, key, value)
 
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
 
     return user
 
