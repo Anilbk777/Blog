@@ -115,8 +115,8 @@ async def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_
 
 
 @app.get("/api/users/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = db.execute(
+async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    result =await db.execute(
         select(User).where(User.id == user_id),
     )
     user = result.scalars().first()
