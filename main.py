@@ -155,10 +155,10 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
     "/api/post/{post_id}",
     response_model=PostResponse,
 )
-def update_post_full(
+async def update_post_full(
     post_id: int, post_data: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    result = db.execute(select(Post).where(Post.id == post_id))
+    result = await db.execute(select(Post).where(Post.id == post_id))
     post = result.scalars().first()
     if not post:
         raise HTTPException(
@@ -174,8 +174,8 @@ def update_post_full(
     for key, value in update_data.items():
         setattr(post, key, value)
 
-    db.commit()
-    db.refresh(post)
+    await db.commit()
+    await db.refresh(post, attribute_names=["author"])
     return post
 
 
