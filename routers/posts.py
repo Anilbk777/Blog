@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from auth import CurrentUser
 from database import get_db
-from model import Post, User
+from model import Post
 from schemas import PostCreate, PostResponse, PostUpdate
 
 router = APIRouter()
@@ -47,18 +47,20 @@ async def get_post(
     current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    if current_user.id != post.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own posts",
-        )
+
     result = await db.execute(
         select(Post).where(Post.id == post_id).options(selectinload(Post.author))
     )
     post = result.scalars().first()
+
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
+        )
+    if current_user.id != post.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only get your own posts",
         )
     return post
 
