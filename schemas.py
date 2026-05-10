@@ -23,6 +23,11 @@ class UserPublic(BaseModel):
 class UserPrivate(UserPublic):
     email: EmailStr
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 
 class UserUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=1, max_length=50)
@@ -36,8 +41,7 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    user_id: int  # TEMPORARY
-
+    pass
 
 class PostUpdate(PostBase):
     title: str | None = Field(default=None, min_length=1, max_length=100)
